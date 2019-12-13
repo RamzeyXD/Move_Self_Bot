@@ -27,6 +27,12 @@ def find_member(func):
 						if member.id == user_id:
 							target.append(member)
 							break
+						else:
+							print(f"{member.name} - not found. Do you wanna try again? Y/N")
+							return await try_again()
+			else:
+				print(f"{server_name} - not found. Do you wanna try again? Y/N")
+				return await try_again()
 
 		return await func(*args, target[0], target[1])
 	return wrap
@@ -46,6 +52,7 @@ async def on_ready():
 	print("""
 			1. Always move to afk.
 			2. Carousel(Move to each room fast).
+			3. Kick always from channel.
 			""")
 	action = int(input("Choose action id (For example: 1) : "))
 
@@ -53,6 +60,8 @@ async def on_ready():
 		await afk_always(user_id, server_name)
 	elif action == 2:
 		await carousel(user_id, server_name)
+	elif action == 3:
+		await kick_always(user_id, server_name)
 	else:
 		print(Fore.RED + "Bad choose! Try again.")
 		await on_ready()
@@ -61,28 +70,23 @@ async def on_ready():
 # Function can always move user to afk but you need Permissions.move_members.
 @find_member
 async def afk_always(user_id, server_name):
-	servers = client.guilds
-	target_member = None
-
-	for server in servers:
-		if server.name == server_name:
-			afk_room = server.afk_channel
-
-			for voice in server.voice_channels:
-				for member in voice.members:
-					if member.id == user_id:
-						target_member = member
-						break
-					else:
-						print(f"{member.name} - not found. Do you wanna try again? Y/N")
-						return await try_again()
-
-		else:
-			print(f"{server_name} - not found. Do you wanna try again? Y/N")
-			return await try_again()
-
 	amount_of_repeat = 0
 	print("Start: Afk Always to target: ", target_member)
+	try:
+		while True:
+			await target_member.edit(voice_channel=afk_room)
+			# Move delay
+			time.sleep(0.3)
+			amount_of_repeat += 1
+	except:
+		print(Fore.RED + "You have not permission to do this!")
+		exit()
+
+
+@find_member
+async def kick_always(user_id, server_name):
+	amount_of_repeat = 0
+	print("Start: Kick Always to target: ", target_member)
 	try:
 		while True:
 			await target_member.edit(voice_channel=None)
@@ -121,13 +125,13 @@ async def try_again():
 		print("I don't understand :(")
 		await try_again()
 
+
 if __name__ == '__main__':
 	print("Wait a little while I prepare your account!")
 
-	token_file = open("token.txt", "r")
-	token = token_file.readline()
-
 	try:
+		token_file = open("token.txt", "r")
+		token = token_file.readline()
 		client.run(token, bot=False)
 	except:
 		print("Token error token! Check your token to validity.")
